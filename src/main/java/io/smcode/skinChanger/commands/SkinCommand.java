@@ -4,11 +4,13 @@ import com.destroystokyo.paper.profile.PlayerProfile;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.smcode.skinChanger.service.SkinService;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.jetbrains.annotations.NotNull;
+import ru.chipsonsky.cache.api.SkinCacheAPI;
 
 import java.io.IOException;
 import java.net.URI;
@@ -21,9 +23,14 @@ import java.util.List;
 import java.util.Map;
 
 public class SkinCommand implements CommandExecutor {
-    private static final String PROFILE_URL = "https://api.mojang.com/users/profiles/minecraft/";
-    private static final String SKIN_URL = "https://sessionserver.mojang.com/session/minecraft/profile/%s?unsigned=false";
-    private static final Map<String, Collection<ProfileProperty>> cache = new HashMap<>();
+
+    private final SkinService skinService;
+    private final SkinCacheAPI skinCacheAPI;
+
+    public SkinCommand(SkinService skinService, SkinCacheAPI skinCacheAPI) {
+        this.skinService = skinService;
+        this.skinCacheAPI = skinCacheAPI;
+    }
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, @NotNull String[] args) {
@@ -39,40 +46,12 @@ public class SkinCommand implements CommandExecutor {
 
         final String targetSkin = args[0];
         final PlayerProfile playerProfile = player.getPlayerProfile();
-        playerProfile.setProperties(getTextureProperty(targetSkin));
+        playerProfile.setProperties(skinService.getTextureProperty(targetSkin));
+        skinCacheAPI.put(player.getUniqueId(), targetSkin);
+
         player.setPlayerProfile(playerProfile);
 
         player.sendMessage("§aYour skin has been changed!");
         return true;
-    }
-
-    private Collection<ProfileProperty> getTextureProperty(String targetSkin) {
-        if (cache.containsKey(targetSkin))
-            return cache.get(targetSkin);
-
-        final String profileResponse = makeRequest(PROFILE_URL + targetSkin);
-        final JsonObject profileObject = JsonParser.parseString(profileResponse).getAsJsonObject();
-        final String uuid = profileObject.get("id").getAsString();
-
-        final String skinResponse = makeRequest(SKIN_URL.formatted(uuid));
-        final JsonObject skinObject = JsonParser.parseString(skinResponse).getAsJsonObject().get("properties").getAsJsonArray().get(0).getAsJsonObject();
-        final String value = skinObject.get("value").getAsString();
-        final String signature = skinObject.get("signature").getAsString();
-        final ProfileProperty profileProperty = new ProfileProperty("textures", value, signature);
-
-        cache.put(targetSkin, List.of(profileProperty));
-
-        return List.of(profileProperty);
-    }
-
-    private String makeRequest(String url) {
-
-        try (final HttpClient client = HttpClient.newBuilder().build()) {
-            final HttpRequest request = HttpRequest.newBuilder().uri(URI.create(url)).build();
-            final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-            return response.body();
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

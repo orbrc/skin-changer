@@ -47,6 +47,7 @@ public class SkinCommand implements CommandExecutor {
         final String targetSkin = args[0];
         final PlayerProfile playerProfile = player.getPlayerProfile();
         playerProfile.setProperties(skinService.getTextureProperty(targetSkin));
+
         skinCacheAPI.put(player.getUniqueId(), targetSkin);
 
         player.setPlayerProfile(playerProfile);

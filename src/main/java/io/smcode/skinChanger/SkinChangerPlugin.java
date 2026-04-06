@@ -2,6 +2,7 @@ package io.smcode.skinChanger;
 
 import io.smcode.skinChanger.commands.SkinCommand;
 import io.smcode.skinChanger.service.SkinService;
+import org.bukkit.Bukkit;
 import org.bukkit.plugin.java.JavaPlugin;
 import ru.chipsonsky.cache.api.SkinCacheAPI;
 import ru.chipsonsky.cache.impl.YamlSkinCache;
@@ -25,5 +26,15 @@ public final class SkinChangerPlugin extends JavaPlugin {
         getCommand("skin").setExecutor(new SkinCommand(skinService, skinCacheAPI));
         getServer().getPluginManager().registerEvents(new JoinEvent(skinCacheAPI, skinService), this);
 
+
+        Bukkit.getScheduler().runTaskTimer(this, () -> {
+            skinCacheAPI.updateCache();
+        }, 1000L, getConfig().getInt("save-period"));
+    }
+
+
+    @Override
+    public void onDisable() {
+        skinCacheAPI.updateCache();
     }
 }

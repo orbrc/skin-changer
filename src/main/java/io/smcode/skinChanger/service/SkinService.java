@@ -3,8 +3,8 @@ package io.smcode.skinChanger.service;
 import com.destroystokyo.paper.profile.ProfileProperty;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import ru.chipsonsky.cache.api.SkinCacheAPI;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -22,23 +22,30 @@ public class SkinService implements SkinServiceAPI {
     private static final Map<String, Collection<ProfileProperty>> cache = new HashMap<>();
 
     @Override
+    @Nullable
     public Collection<ProfileProperty> getTextureProperty(String targetSkin) {
         if (cache.containsKey(targetSkin))
             return cache.get(targetSkin);
 
-        final String profileResponse = makeRequest(PROFILE_URL + targetSkin);
-        final JsonObject profileObject = JsonParser.parseString(profileResponse).getAsJsonObject();
-        final String uuid = profileObject.get("id").getAsString();
+        try {
+            final String profileResponse = makeRequest(PROFILE_URL + targetSkin);
+            final JsonObject profileObject = JsonParser.parseString(profileResponse).getAsJsonObject();
+            final String uuid = profileObject.get("id").getAsString();
 
-        final String skinResponse = makeRequest(SKIN_URL.formatted(uuid));
-        final JsonObject skinObject = JsonParser.parseString(skinResponse).getAsJsonObject().get("properties").getAsJsonArray().get(0).getAsJsonObject();
-        final String value = skinObject.get("value").getAsString();
-        final String signature = skinObject.get("signature").getAsString();
-        final ProfileProperty profileProperty = new ProfileProperty("textures", value, signature);
+            final String skinResponse = makeRequest(SKIN_URL.formatted(uuid));
 
-        cache.put(targetSkin, List.of(profileProperty));
+            final JsonObject skinObject = JsonParser.parseString(skinResponse).getAsJsonObject().get("properties").getAsJsonArray().get(0).getAsJsonObject();
+            final String value = skinObject.get("value").getAsString();
+            final String signature = skinObject.get("signature").getAsString();
 
-        return List.of(profileProperty);
+            final ProfileProperty profileProperty = new ProfileProperty("textures", value, signature);
+
+            cache.put(targetSkin, List.of(profileProperty));
+
+            return List.of(profileProperty);
+        } catch (NullPointerException e) {
+            return null;
+        }
     }
 
     private String makeRequest(String url) {

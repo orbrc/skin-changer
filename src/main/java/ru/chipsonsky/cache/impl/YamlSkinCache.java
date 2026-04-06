@@ -1,9 +1,7 @@
 package ru.chipsonsky.cache.impl;
 
-import org.bukkit.configuration.Configuration;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.plugin.Plugin;
 import org.jspecify.annotations.Nullable;
 import ru.chipsonsky.cache.api.SkinCacheAPI;
@@ -65,7 +63,11 @@ public class YamlSkinCache implements SkinCacheAPI {
 
     @Override
     public @Nullable String get(UUID uuid) {
-        return cache.computeIfAbsent(uuid, key -> cacheSection.getString(uuid.toString()));
+        plugin.getLogger().info("Start get cache");
+        String skin = cache.computeIfAbsent(uuid, key -> cacheSection.getString(uuid.toString()));
+        plugin.getLogger().info("Stop get cache");
+
+        return skin;
     }
 
     @Override
@@ -80,6 +82,8 @@ public class YamlSkinCache implements SkinCacheAPI {
 
             if (!newValue.equals(oldValue)) {
                 cacheSection.set(key, newValue);
+
+                plugin.getLogger().info("Set: " + newValue + " to: " + key);
                 changed = true;
             }
         }

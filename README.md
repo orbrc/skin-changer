@@ -1,7 +1,7 @@
 # Lightweight Skin Changer
 
 A lightweight Minecraft plugin that allows players to change their skin using a simple command.
-Forked from SimpleMineCode/skin-changer – originally only provided a /skin command without any persistence.
+Forked from ```SimpleMineCode/skin-changer``` – originally only provided a /skin command without any persistence.
 tested: 1.21.x
 
 ### What's new in this fork?
